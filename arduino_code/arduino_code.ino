@@ -1,11 +1,6 @@
 #include <SoftwareSerial.h>
 #include "rgb_lcd.h"
 
-#define TOUCH_PIN 2
-#define BUTTON_PIN 6
-#define LED_PIN 3
-#define BUZZER_PIN 5
-
 #define TEMP_SENSOR A0
 #define LIGHT_SENSOR A1
 #define SOUND_SENSOR A2
@@ -18,14 +13,10 @@
 
 rgb_lcd lcd;
 
-SoftwareSerial Ser =  SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
+//DECOMMENT: SoftwareSerial Ser =  SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
 
 
-float read_temperature(){
-
-  // Get the (raw) value of the temperature sensor.
-  int val = analogRead(TEMP_SENSOR);
-
+float convert_temperature(int val){
   // Determine the current resistance of the thermistor based on the sensor value.
   float resistance = (float)(1023-val)*10000/val;
 
@@ -35,57 +26,56 @@ float read_temperature(){
   return temperature;
 }
 
+float read_temperature(){
+
+  // Get the (raw) value of the temperature sensor.
+  int val = analogRead(TEMP_SENSOR);
+
+  float temperature = -1.0f;
+  // TODO: call convert_temperature to get actual temperature in celsius
+
+  return temperature;
+}
+
 int read_light(){
-  int lightLevel = analogRead(LIGHT_SENSOR);
+  int lightLevel = -1;
+  // TODO: use analogRead from LIGHT_SENSOR
+
   return lightLevel;
 }
 
 int read_sound(){
-  int soundLevel = analogRead(SOUND_SENSOR);
+  int soundLevel = -1;
+  // TODO: use analogRead from SOUND_SENSOR
 
   return soundLevel;
 }
 
 void setup() {
-  //pinMode(TOUCH_PIN, INPUT);
-  //pinMode(BUTTON_PIN, INPUT);
-  //pinMode(LED_PIN, OUTPUT);
-  //pinMode(BUZZER_PIN, OUTPUT);
-  //digitalWrite(LED_PIN, LOW);
-  //digitalWrite(BUZZER_PIN, LOW);
-
-  // Inizializzazione della delle colonne e righe del display LCD
+  // Init LCD columns and rows
   lcd.begin(16, 2);
-  // Stampa di un messaggio
+  
   lcd.print("Starting...");
 
   Serial.begin(9600);
 
-    // Definizione modalità pin
-  pinMode(BT_RX_PIN, INPUT);
-  pinMode(BT_TX_PIN, OUTPUT);
-  // Inizializzazione della comunicazione Bluetooth
-  Ser.begin(9600);
+  // Serial PIN pin
+  //DECOMMENT: pinMode(BT_RX_PIN, INPUT);
+  //DECOMMENT: pinMode(BT_TX_PIN, OUTPUT);
+  //DECOMMENT: Ser.begin(9600);
 }
 
-void send_data() {
-  int soundLevel = read_sound();
-  float temperatureC = read_temperature();
-  int lightLevel = analogRead(LIGHT_SENSOR);
+/* DECOMMENT:
+void send_data_as_json(float temperatureC, int temperatureC, int lightLevel) {
   Ser.print("{\"device_id\":\"arduino01\"");
   Ser.print(",\"adc_temp\":");  Ser.print(temperatureC);
   Ser.print(",\"adc_light\":"); Ser.print(lightLevel);
   Ser.print(",\"adc_sound\":"); Ser.print(soundLevel);
   Ser.println("}");
-  delay(1000);
-}
+}*/
 
-void print_info(){
+void print_info(float temperatureC, int lightLevel, int soundLevel){
   lcd.clear();
-  // Lettura sensori
-  int soundLevel = read_sound();
-  float temperatureC = read_temperature();
-  int lightLevel = analogRead(LIGHT_SENSOR);
 
   lcd.setCursor(0, 0);
   lcd.print("T.:");
@@ -105,8 +95,13 @@ void print_info(){
 
 void loop() {
   Serial.println("....");
-  print_info();
-  send_data();
+
+  // READ sensor data
+  float temperatureC = read_temperature();
+  int soundLevel = read_sound();
+  int lightLevel = analogRead(LIGHT_SENSOR);
+
+  print_info(temperatureC, temperatureC, lightLevel);
  
-  delay(15000);
+  delay(5000);
 }

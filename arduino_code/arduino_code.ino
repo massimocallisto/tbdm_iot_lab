@@ -44,13 +44,6 @@ int read_light(){
   return lightLevel;
 }
 
-int read_sound(){
-  int soundLevel = -1;
-  // TODO: use analogRead from SOUND_SENSOR
-
-  return soundLevel;
-}
-
 void setup() {
   // Init LCD columns and rows
   lcd.begin(16, 2);
@@ -74,7 +67,7 @@ void send_data_as_json(float temperatureC, int temperatureC, int lightLevel) {
   Ser.println("}");
 }*/
 
-void print_info(float temperatureC, int lightLevel, int soundLevel){
+void print_info(float temperatureC, int lightLevel){
   lcd.clear();
 
   lcd.setCursor(0, 0);
@@ -87,10 +80,6 @@ void print_info(float temperatureC, int lightLevel, int soundLevel){
   lcd.setCursor(12, 0);
   lcd.print(lightLevel);
 
-  lcd.setCursor(0, 1);
-  lcd.print("Snd:");
-  lcd.setCursor(4, 1);
-  lcd.print(soundLevel);
 }
 
 void loop() {
@@ -98,10 +87,9 @@ void loop() {
 
   // READ sensor data
   float temperatureC = read_temperature();
-  int soundLevel = read_sound();
   int lightLevel = analogRead(LIGHT_SENSOR);
 
-  print_info(temperatureC, temperatureC, lightLevel);
+  print_info(temperatureC, lightLevel);
  
   delay(5000);
 }

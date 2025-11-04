@@ -20,14 +20,14 @@ const unsigned long SAMPLE_MS = 0.1 * 60 * 1000;
 HardwareSerial SerialArduino(2); // UART2
 
 // WiFi
-#define WIFI_SSID "DCDD"
-#define WIFI_PASS "birillo19$"
+#define WIFI_SSID "***"
+#define WIFI_PASS "****"
 
 // MQTT (TCP)
-#define MQTT_HOST "k8s-thingsbo-tbmqttlo-95ecb33f07-0ddd6ab193c33d8c.elb.eu-south-1.amazonaws.com" // IP o hostname broker
+#define MQTT_HOST "localhost" // IP o hostname broker
 #define MQTT_PORT 1883                                                                             // 8883 se TLS
-#define MQTT_USER "edge-gw"
-#define MQTT_PASS "4AWJchI8fvQpp5@EiTHW"
+#define MQTT_USER "**"
+#define MQTT_PASS "**"
 #define MQTT_TOPIC "/test/01/esp01" // topic di pubblicazione
 
 // ====================

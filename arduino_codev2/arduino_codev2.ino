@@ -13,7 +13,7 @@
 
 rgb_lcd lcd;
 
-//DECOMMENT: SoftwareSerial Ser =  SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
+SoftwareSerial Ser =  SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
 
 
 float convert_temperature(int val){
@@ -31,14 +31,13 @@ float read_temperature(){
   // Get the (raw) value of the temperature sensor.
   int val = analogRead(TEMP_SENSOR);
 
-  float temperature = -1.0f;
-  // TODO: call convert_temperature to get actual temperature in celsius
+  float temperature = convert_temperature(val);
 
   return temperature;
 }
 
 int read_light(){
-  int lightLevel = -1;
+  int lightLevel = analogRead(LIGHT_SENSOR);
   // TODO: use analogRead from LIGHT_SENSOR
 
   return lightLevel;
@@ -53,19 +52,19 @@ void setup() {
   Serial.begin(9600);
 
   // Serial PIN pin
-  //DECOMMENT: pinMode(BT_RX_PIN, INPUT);
-  //DECOMMENT: pinMode(BT_TX_PIN, OUTPUT);
-  //DECOMMENT: Ser.begin(9600);
+  pinMode(BT_RX_PIN, INPUT);
+  pinMode(BT_TX_PIN, OUTPUT);
+  Ser.begin(9600);
 }
 
-/* DECOMMENT:
-void send_data_as_json(float temperatureC, int temperatureC, int lightLevel) {
+
+void send_data_as_json(float temperatureC, int lightLevel) {
   Ser.print("{\"device_id\":\"arduino01\""); // <-- Important: Change with YOUR TEAM NAME (use only [a-zA-Z0-9]*)
   Ser.print(",\"adc_temp\":");  Ser.print(temperatureC);
   Ser.print(",\"adc_light\":"); Ser.print(lightLevel);
-  Ser.print(",\"adc_sound\":"); Ser.print(soundLevel);
+  Ser.print(",\"adc_sound\":"); Ser.print(temperatureC);
   Ser.println("}");
-}*/
+}
 
 void print_info(float temperatureC, int lightLevel){
   lcd.clear();
@@ -92,6 +91,7 @@ void loop() {
   // TODO: add the sound measure
 
   print_info(temperatureC, lightLevel);
+  send_data_as_json(temperatureC, lightLevel);
  
   delay(5000);
 }

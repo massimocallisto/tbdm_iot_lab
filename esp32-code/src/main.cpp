@@ -3,37 +3,25 @@
 #include <WiFi.h>
 #include <time.h> // SNTP + timezone
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-#define SCREEN_ADDRESS 0x3C // Indirizzo I2C più comune per SSD1306
-
-// ====== CONFIG ======
-const unsigned long SAMPLE_MS = 0.1 * 60 * 1000;
 
 // ESP32 (DevKit): RX2=GPIO16, TX2=GPIO17
 HardwareSerial SerialArduino(2); // UART2
 
 // WiFi
-#define WIFI_SSID "***"
-#define WIFI_PASS "****"
+#define WIFI_SSID "BIGDATA"
+#define WIFI_PASS "bigdata1234"
 
 // MQTT (TCP)
-#define MQTT_HOST "localhost" // IP o hostname broker
+#define MQTT_HOST "64.225.82.0" // IP o hostname broker
 #define MQTT_PORT 1883                                                                             // 8883 se TLS
-#define MQTT_USER "**"
-#define MQTT_PASS "**"
-#define MQTT_TOPIC "/test/01/esp01" // topic di pubblicazione
-
-// ====================
+#define MQTT_USER "user"
+#define MQTT_PASS "user1234"
+#define MQTT_TOPIC "/test/01/" //esp01" // topic di pubblicazione
 
 // Identità dispositivo / payload
-static const char *DEVICE_ID = "esp01";
+//static const char *DEVICE_ID = "esp01";
 static const char *PAN_ID = "0001";
 static const char *DEVICE_UUID = "d8826188-b1bd-4062-873f-48a35f7dffa4";
 static const char *SENSOR_TYPE = "devtest";
@@ -44,22 +32,14 @@ static const char *MSG_TYPE = "status";
 // CET-1CEST,M3.5.0,M10.5.0/3  => CET (UTC+1), CEST DST dalla 5a dom di Mar alla 5a dom di Ott alle 03:00
 static const char *TZ_EU_ROME = "CET-1CEST,M3.5.0,M10.5.0/3";
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// DHT dht;//(DHTPIN, DHTTYPE);
-
 // Per MQTT TCP (non TLS):
 WiFiClient wifiClient;
-
-// Se vuoi TLS: scommenta queste due righe e usa `WiFiClientSecure secureClient` al posto di wifiClient
-// #include <WiFiClientSecure.h>
-// WiFiClientSecure wifiClientTLS;
 
 PubSubClient mqtt(wifiClient);
 
 unsigned long lastRead = 0;
 
-// ================== FUNZIONI UTILI ==================
+
 void connectWiFi()
 {
   if (WiFi.status() == WL_CONNECTED)
@@ -144,6 +124,10 @@ void ensureMqtt()
     // wifiClientTLS.setInsecure(); // o setCACert(...)
     // mqtt.setClient(wifiClientTLS);
 
+    String clientId = "ESP32Client-";
+    clientId += String(random(0xffff), HEX);
+    const char *DEVICE_ID = clientId.c_str();
+
     if (mqtt.connect(DEVICE_ID, MQTT_USER, MQTT_PASS))
     {
       Serial.println("OK");
@@ -158,7 +142,7 @@ void ensureMqtt()
   }
 }
 
-void publishReading(float temperature, int light, int sound)
+void publishReading(const char *dev, float temperature, int light, int sound)
 {
   // Costruzione JSON
   DynamicJsonDocument doc(512);
@@ -168,7 +152,7 @@ void publishReading(float temperature, int light, int sound)
   doc["fw_version"] = FW_VERSION; // corretto ":" (non ";")
   doc["uuid"] = DEVICE_UUID;
   doc["id"] = PAN_ID;
-  doc["id"] = DEVICE_ID;
+  doc["id"] = dev;
   doc["temperature"] = temperature; // float
   doc["light"] = light;             // int
   doc["sound"] = sound;             // int
@@ -176,14 +160,16 @@ void publishReading(float temperature, int light, int sound)
   // Serializza in buffer
   String payload;
   serializeJson(doc, payload);
+  String topic = String(MQTT_TOPIC) + dev;
+
 
   Serial.print("PUB ");
-  Serial.print(MQTT_TOPIC);
+  Serial.print(topic.c_str());
   Serial.print(" -> ");
   Serial.println(payload);
 
   // QoS 0, retain false
-  mqtt.publish(MQTT_TOPIC, payload.c_str());
+  mqtt.publish(topic.c_str(), payload.c_str());
 }
 
 void setup()
@@ -200,24 +186,7 @@ void setup()
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
 
   Serial.println();
-  Serial.println(F("ESP32 + DHT22 reader"));
-
-  // dht.begin();
-
-  Wire.begin(18, 19); // SDA = 21, SCL = 22
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
-  {
-    Serial.println(F("SSD1306 non trovato!"));
-    while (true)
-      ;
-  }
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("Starting...");
-  display.display();
+  Serial.println(F("ESP32 + reader"));
 
   // Piccolo warmup: la prima lettura spesso è NaN
   delay(2000);
@@ -234,7 +203,7 @@ void loop()
     ensureMqtt();
   mqtt.loop();
 
-  while (SerialArduino.available())
+   while (SerialArduino.available())
   {
     char c = (char)SerialArduino.read();
     if (c == '\n')
@@ -259,20 +228,21 @@ void loop()
         int light_adc = doc["adc_light"];
         int sound_adc = doc["adc_sound"];
 
-        // 4️⃣ (Facoltativo) Conversioni / logica
-        float temp_c = (temp_adc / 1023.0) * 100.0; // esempio fittizio
+        // 4️(Facoltativo) Conversioni / logica
+        float temp_c = temp_adc;//(temp_adc / 1023.0) * 100.0; // esempio fittizio
 
-        // 5️⃣ Output
+        // 5️Output
         Serial.println("Parsed successfully:");
         Serial.printf(" Device: %s\n", dev);
         Serial.printf(" Temp: %.2f°C\n", temp_adc);
         Serial.printf(" Light: %d\n", light_adc);
         Serial.printf(" Sound: %d\n", sound_adc);
         
-        publishReading(temp_c, light_adc, sound_adc);
+        publishReading(dev, temp_c, light_adc, sound_adc);
       }
 
       line = "";
+      //delay(5000);
     }
     else if (c != '\r')
     {

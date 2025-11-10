@@ -58,15 +58,15 @@ void setup() {
 }
 
 
-void send_data_as_json(float temperatureC, int lightLevel) {
+void send_data_as_json(float temperatureC, int lightLevel, int soundLevel) {
   Ser.print("{\"device_id\":\"arduino01\""); // <-- Important: Change with YOUR TEAM NAME (use only [a-zA-Z0-9]*)
   Ser.print(",\"adc_temp\":");  Ser.print(temperatureC);
   Ser.print(",\"adc_light\":"); Ser.print(lightLevel);
-  Ser.print(",\"adc_sound\":"); Ser.print(temperatureC);
+  Ser.print(",\"adc_sound\":"); Ser.print(soundLevel);
   Ser.println("}");
 }
 
-void print_info(float temperatureC, int lightLevel){
+void print_info(float temperatureC, int lightLevel, int soundLevel){
   lcd.clear();
 
   lcd.setCursor(0, 0);
@@ -79,6 +79,11 @@ void print_info(float temperatureC, int lightLevel){
   lcd.setCursor(12, 0);
   lcd.print(lightLevel);
 
+  lcd.setCursor(0, 1);
+  lcd.print("S.:");
+  lcd.setCursor(12, 0);
+  lcd.print(soundLevel);
+
 }
 
 void loop() {
@@ -87,11 +92,12 @@ void loop() {
   // READ sensor data
   float temperatureC = read_temperature();
   int lightLevel = analogRead(LIGHT_SENSOR);
+  int soundLevel = analogRead(SOUND_SENSOR);
 
   // TODO: add the sound measure
 
-  print_info(temperatureC, lightLevel);
-  send_data_as_json(temperatureC, lightLevel);
+  print_info(temperatureC, lightLevel, soundLevel);
+  send_data_as_json(temperatureC, lightLevel, soundLevel);
  
   delay(5000);
 }
